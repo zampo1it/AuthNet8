@@ -1,0 +1,70 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    var curUser = Model.CurrentUserEmail;
+    var isBlocked = Model.IsCurrentUserBlocked;
+}
+
+<script src="~/js/UserActions.js"></script>
+
+<div class="text-center">
+    <h1 class="display-4">Welcome!</h1>
+    @if (curUser != null && isBlocked == false)
+    {
+        <p>Glad to see you, @curUser!</p>
+        <p>Look at these beautiful users we have:</p>
+
+        <div>
+            <form method="post" id="blockUsersForm" asp-page-handler="Blocking" style="display: inline-block;">
+                <button type="button" class="btn btn-primary" onclick="blockUsers()">BLOCK</button>
+            </form>
+            <form method="post" id="unblockUsersForm" asp-page-handler="UnBlocking" style="display: inline-block;">
+                <button type="button" class="btn btn-primary" onclick="unblockUsers()">UNBLOCK</button>
+            </form>
+            <form method="post" id="deleteUsersForm" asp-page-handler="Delete" style="display: inline-block;">
+                <button type="button" class="btn btn-danger" onclick="deleteUsers()">DELETE</button>
+            </form>
+        </div>
+        <p></p>
+
+        <table class="table table-striped table-bordered" style="margin: 0 auto;">
+            <thead class="thead-dark">
+                <tr>
+                    <th><input type="checkbox" id="selectAll" /></th>
+                    <th>Username / Emails</th>
+                    <th>Blocked</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td style="border: 1px solid black;"><input type="checkbox" name="selectedUsers" value="@user.Email" /></td>
+                        <td style="border: 1px solid black;">@user.Email</td>
+                        <td style="border: 1px solid black;">@(user.LockoutEnd != null ? "YES" : "NO")</td>
+                        <td style="border: 1px solid black;">@user.Id</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else if (curUser != null && isBlocked == true)
+    {
+        <p>Sorry, @curUser, you're blocked :('</p>
+    }
+    else
+    {
+        <p>You need to login to see our list of users!</p>
+    }
+</div>
+
+<script>
+    document.getElementById("selectAll").addEventListener("change", function () {
+        var checkboxes = document.getElementsByName("selectedUsers");
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = this.checked;
+        }
+    });
+</script>
