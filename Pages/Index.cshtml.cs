@@ -9,14 +9,16 @@ namespace WebApplication3.Pages
         private readonly ILogger<IndexModel> _logger;
 
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
         public IdentityUser[] Users { get; set; } = Array.Empty<IdentityUser>();
         public string CurrentUserEmail { get; set; }
 
         public bool IsCurrentUserBlocked { get; set; }
-        public IndexModel(ILogger<IndexModel> logger, UserManager<IdentityUser> user)
+        public IndexModel(ILogger<IndexModel> logger, UserManager<IdentityUser> user, SignInManager<IdentityUser> signInManager)
         {
             _logger = logger;
             _userManager = user;
+            _signInManager = signInManager;
         }
 
         public async Task OnGetAsync()
@@ -43,19 +45,53 @@ namespace WebApplication3.Pages
                     await _userManager.UpdateAsync(user);
                 }
             }
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser.LockoutEnd != null) {
+                await _signInManager.SignOutAsync();
+                Response.Redirect("/Login");
+                Response.Headers.Add("Refresh", "0;url=/Login");
+            }
 
+            return RedirectToPage();
+        }
+        public async Task<IActionResult> OnPostUnBlockingAsync(string[] selectedUsers)
+        {
+
+            foreach (var userEmail in selectedUsers)
+            {
+                var user = await _userManager.FindByEmailAsync(userEmail);
+                if (user != null)
+                {
+                    user.LockoutEnd = null;
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser.LockoutEnd != null)
+            {
+                await _signInManager.SignOutAsync();
+            }
 
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostDelete(string selectedUsers)
         {
-
-            var usersToDelete = selectedUsers.Split(',');
-
-            foreach (var user in usersToDelete)
+            if (selectedUsers != null)
             {
-                await DeleteUserFromDatabase(user);
+                var usersToDelete = selectedUsers.Split(',');
+
+                foreach (var user in usersToDelete)
+                {
+                    await DeleteUserFromDatabase(user);
+                }
+            
+
+            var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser != null && usersToDelete.Contains(currentUser.Email))
+                {
+                    await _signInManager.SignOutAsync();
+                }
             }
 
             return RedirectToPage();
@@ -78,24 +114,5 @@ namespace WebApplication3.Pages
                 }
             }
         }
-
-
-        public async Task<IActionResult> OnPostUnBlockingAsync(string[] selectedUsers)
-        {
-
-            foreach (var userEmail in selectedUsers)
-            {
-                var user = await _userManager.FindByEmailAsync(userEmail);
-                if (user != null)
-                {
-                    user.LockoutEnd = null;
-                    await _userManager.UpdateAsync(user);
-                }
-            }
-
-
-            return RedirectToPage();
-        }
-
     }
 }

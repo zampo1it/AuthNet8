@@ -7,7 +7,7 @@ namespace WebApplication3.Model
     {
         public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options)
         {
-            //Database.EnsureCreated();
+            Database.EnsureCreated();
         }
     }
 }
